@@ -1,34 +1,34 @@
 <html>
   <head>
-    <script type='text/javascript' src='https://www.google.com/jsapi'></script>
-	  <script src=" http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
-    <script type='text/javascript'>
-      google.load('visualization', '1', {packages:['gauge']});
-      google.setOnLoadCallback(drawChart);
-      function drawChart() {
-		    $.get("./getinfo",
-            { 
-            },
-            function(returnData){
-              if(typeof(returnData)!='string'&&window.parent.length>0){
-                window.parent.location="../index";
-              }else{
-                var json=eval("("+returnData+")");
-						    var data = new google.visualization.arrayToDataTable(json);
-						    var options = {
-							    width: 400, height: 120,
-							    redFrom: 90, redTo: 100,
-							    yellowFrom:75, yellowTo: 90,
-							    minorTicks: 5
-						    };
-						    var chart = new google.visualization.Gauge(document.getElementById('chart_div'));
-						    chart.draw(data, options);
-              }
+   	<script type='text/javascript' src='https://www.google.com/jsapi'></script>
+	<script src=" http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+    	<script type='text/javascript'>
+      	google.load('visualization', '1', {packages:['gauge']});
+      	google.setOnLoadCallback(drawChart);
+      	function drawChart() {
+		$.get("./getinfo",
+        	{ 
+        	},
+        	function(returnData){
+                	if(typeof(returnData)!='string'&&window.parent.length>0){
+                        	window.parent.location="../index";
+                	}else{
+                        	var json=eval("("+returnData+")");
+				var data = new google.visualization.arrayToDataTable(json);
+				var options = {
+					width: 400, height: 120,
+					redFrom: 90, redTo: 100,
+					yellowFrom:75, yellowTo: 90,
+					minorTicks: 5
+				};
+				var chart = new google.visualization.Gauge(document.getElementById('chart_div'));
+				chart.draw(data, options);
+                    	}
 
-		    });   
-      }
-      setTimeout(drawChart(),15000);
-    </script>
+		});   
+	}
+	setInterval("drawChart()",15000);
+    	</script>
   </head>
   <body>
     <div id='chart_div'></div>

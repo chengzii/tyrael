@@ -13,11 +13,14 @@ import (
 	"syscall"
 	"encoding/json"
 	//"fmt"
+	"kval"
+	"strings"
 )
 
 var (
 	indexTemp = template.Must(template.ParseFiles("../tpl/index.html"))
 	showTemp  = template.Must(template.ParseFiles("../tpl/show.html"))
+	lineTemp  = template.Must(template.ParseFiles("../tpl/line.html"))
 )
 
 func main() {
@@ -35,13 +38,31 @@ func starthttpserver() {
 		info.Logsave("Get http config error!")
 		return
 	}
-	http.HandleFunc("/", indexHandler)
+	http.Handle("/img/", http.FileServer(http.Dir("../public")))
+	http.Handle("/css/", http.FileServer(http.Dir("../public")))
+	http.Handle("/js/", http.FileServer(http.Dir("../public")))
+	
+	http.HandleFunc("/index", indexHandler)
 	http.HandleFunc("/show", showHandler)
+	http.HandleFunc("/line", lineHandler)
 	http.HandleFunc("/getinfo", getinfoHandler)
+	http.HandleFunc("/getline", getlineHandler)
+	http.HandleFunc("/", notfoundHandler)
 	if err := http.ListenAndServe(":"+confarr["httpport"], nil); err != nil {
 		panic("ListenAndServe: " + err.Error())
 	}
 }
+func notfoundHandler(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path == "/" {
+		http.Redirect(w, r, "/index", http.StatusFound)
+	}
+	t, err := template.ParseFiles("../tpl/404.html")
+	if (err != nil) {
+		info.Logsave(err.Error())
+	}
+	t.Execute(w, nil)
+}
+
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	info.Logsave("REQUES FROM: "+r.RemoteAddr+" URI:"+r.RequestURI)
 	if err := indexTemp.Execute(w, nil); err != nil {
@@ -54,6 +75,13 @@ func showHandler(w http.ResponseWriter, r *http.Request) {
 	info.Logsave("REQUES FROM: "+r.RemoteAddr+" URI:"+r.RequestURI)
 	if err := showTemp.Execute(w, nil); err != nil {
 		info.Logsave("showHandler.showTemp.Execute: " + err.Error())
+		return
+	}
+}
+func lineHandler(w http.ResponseWriter, r *http.Request) {
+	info.Logsave("REQUES FROM: "+r.RemoteAddr+" URI:"+r.RequestURI)
+	if err := lineTemp.Execute(w, nil); err != nil {
+		info.Logsave("lineHandler.lineTemp.Execute: " + err.Error())
 		return
 	}
 }
@@ -77,6 +105,77 @@ func getinfoHandler(w http.ResponseWriter, r *http.Request) {
 		rearr = append(rearr,arr)	
 	}
 	result, _ := json.Marshal(rearr)
+	w.Write(result)
+}
+type One struct{
+	date	string
+	size	float64
+}
+type Ones struct{
+	list	[]One
+}
+func getlineHandler(w http.ResponseWriter, r *http.Request) {
+	info.Logsave("REQUES FROM: "+r.RemoteAddr+" URI:"+r.RequestURI)
+	kvarr:=kval.Getall()
+
+	childarr:=make([]interface{},0)
+	var rearr map[string]interface{}
+	flag:=""
+	types:=make([]string,2)
+	types[0]="date"
+	types[1]="使用率"
+	for i:=0;i<len(kvarr);i++{
+		v:=kvarr[i]		
+		ks := strings.Split(v.Key,":")
+		ktime,_:=strconv.Atoi(ks[2])
+		kvalue,_:=strconv.ParseFloat(v.Val,0)
+		date := time.Unix(int64(ktime), 0).Format("2006-01-02 15:04:05")
+		newone:=make([]interface{},2)
+		newone[0]=date
+		newone[1]=kvalue
+		//var newone map[string]interface{}=map[string]interface{}{"0":date,"1":kvalue}
+		if i==len(kvarr)-1{
+			if ks[0]+":"+ks[1] != flag{
+				//rearr = map[string]interface{}{flag:childarr}
+				if len(rearr)==0{
+					rearr = map[string]interface{}{flag:childarr}
+				}else{	
+					rearr[flag]=childarr
+				}
+				flag = ks[0]+":"+ks[1]
+				childarr = childarr[:0]	
+				childarr = append(childarr,types)
+			}
+			childarr = append(childarr,newone)
+			//rearr = map[string]interface{}{flag:childarr}
+			if len(rearr)==0{
+				rearr = map[string]interface{}{flag:childarr}
+			}else{	
+				rearr[flag]=childarr
+			}
+		}else if i==0{
+			flag = ks[0]+":"+ks[1]
+			childarr = append(childarr,types)
+			childarr = append(childarr,newone)
+		}else if ks[0]+":"+ks[1] != flag && i>0{
+			//rearr = map[string]interface{}{flag:childarr}
+			if len(rearr)==0{
+				rearr = map[string]interface{}{flag:childarr}
+			}else{	
+				rearr[flag]=childarr
+			}
+			flag = ks[0]+":"+ks[1]
+			if len(childarr)>0{
+				childarr = childarr[:0]
+				childarr = append(childarr,types)
+			}
+			childarr = append(childarr,newone)
+		}else{
+			childarr = append(childarr,newone)
+		}	
+		//fmt.Println("rearr",rearr)
+	}
+	result,_:= json.Marshal(rearr)
 	w.Write(result)
 }
 func getconf() (map[string]string, error) {
@@ -195,6 +294,9 @@ func test() {
 			if issave==1 {
 				redisdb.Rset(key,[]byte(v))
 				redisdb.Rsetval(key,int64(totaltime))
+			}else{
+				kval.Add(key,v)	
+				//fmt.Println(kval.Getall())	
 			}
 		}
 	}

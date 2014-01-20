@@ -1,0 +1,41 @@
+<html>
+  <head>
+   	<script type='text/javascript' src='https://www.google.com/jsapi'></script>
+	<script src=" http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+    	<script type='text/javascript'>
+      	google.load('visualization', '1', {packages:['corechart']});
+      	google.setOnLoadCallback(drawChart);
+      	function drawChart() {
+		$.get("./getline",
+        	{ 
+        	},
+        	function(returnData){
+                	if(typeof(returnData)!='string'&&window.parent.length>0){
+                        	window.parent.location="../index";
+                	}else{
+				var json='';
+				var id=0;
+            			json=eval("("+returnData+")");
+				$.each(json,function(index,item){
+					var data = new google.visualization.arrayToDataTable(item);
+					options = {
+						title: index+' 服务占用资源监控'
+					};
+					var chart = new google.visualization.LineChart(document.getElementById('my_chart_'+id));
+					id=id+1;
+					chart.draw(data,options);
+				});
+                    	}
+
+		});   
+	}
+	<!--setInterval("drawChart()",15000);-->
+    	</script>
+  </head>
+  <body>
+    <div id='my_chart_0'></div>
+    <div id='my_chart_1'></div>
+    <div id='my_chart_2'></div>
+    <div id='my_chart_3'></div>
+  </body>
+</html>
