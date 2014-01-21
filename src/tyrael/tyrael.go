@@ -117,7 +117,7 @@ type Ones struct{
 func getlineHandler(w http.ResponseWriter, r *http.Request) {
 	info.Logsave("REQUES FROM: "+r.RemoteAddr+" URI:"+r.RequestURI)
 	kvarr:=kval.Getall()
-
+	//fmt.Println("kvarr",kvarr)
 	childarr:=make([]interface{},0)
 	var rearr map[string]interface{}
 	flag:=""
@@ -133,48 +133,45 @@ func getlineHandler(w http.ResponseWriter, r *http.Request) {
 		newone:=make([]interface{},2)
 		newone[0]=date
 		newone[1]=kvalue
-		//var newone map[string]interface{}=map[string]interface{}{"0":date,"1":kvalue}
+		cpchild:=make([]interface{},len(childarr))
 		if i==len(kvarr)-1{
 			if ks[0]+":"+ks[1] != flag{
-				//rearr = map[string]interface{}{flag:childarr}
+				copy(cpchild,childarr)
 				if len(rearr)==0{
-					rearr = map[string]interface{}{flag:childarr}
+					rearr = map[string]interface{}{flag:cpchild}
 				}else{	
-					rearr[flag]=childarr
+					rearr[flag]=cpchild	
 				}
 				flag = ks[0]+":"+ks[1]
 				childarr = childarr[:0]	
 				childarr = append(childarr,types)
 			}
 			childarr = append(childarr,newone)
-			//rearr = map[string]interface{}{flag:childarr}
 			if len(rearr)==0{
 				rearr = map[string]interface{}{flag:childarr}
 			}else{	
-				rearr[flag]=childarr
+				rearr[flag]=childarr	
 			}
 		}else if i==0{
 			flag = ks[0]+":"+ks[1]
 			childarr = append(childarr,types)
 			childarr = append(childarr,newone)
 		}else if ks[0]+":"+ks[1] != flag && i>0{
-			//rearr = map[string]interface{}{flag:childarr}
+			copy(cpchild,childarr)
 			if len(rearr)==0{
-				rearr = map[string]interface{}{flag:childarr}
+				rearr = map[string]interface{}{flag:cpchild}
 			}else{	
-				rearr[flag]=childarr
+				rearr[flag]=cpchild	
 			}
 			flag = ks[0]+":"+ks[1]
-			if len(childarr)>0{
-				childarr = childarr[:0]
-				childarr = append(childarr,types)
-			}
+			childarr = childarr[:0]
+			childarr = append(childarr,types)
 			childarr = append(childarr,newone)
 		}else{
 			childarr = append(childarr,newone)
 		}	
-		//fmt.Println("rearr",rearr)
 	}
+	//fmt.Println("rearr",rearr)
 	result,_:= json.Marshal(rearr)
 	w.Write(result)
 }
