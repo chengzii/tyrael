@@ -123,6 +123,10 @@ func getpid(process string,port string) (pid string){
 		res,_ := exec.Command("/bin/sh", "-c", `ps -ef | grep -v "grep" | grep `+process +`|awk '{print $2}'`).Output()
 		pid=strings.TrimSpace(string(res))
 	}else if intp > 0{
+		as:=[]byte(process)
+		if len(as)>9{
+			process=string(as[:9])
+		}
 		res,_ := exec.Command("/bin/sh", "-c", `lsof -i -P | grep  "LISTEN" | grep `+process+ `| grep `+port + `|awk '{print $2}'`).Output()	
 		pid=strings.TrimSpace(string(res))
 	}else{
